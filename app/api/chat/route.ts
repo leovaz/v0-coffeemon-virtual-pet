@@ -67,9 +67,10 @@ Reglas de comportamiento:
       })),
     })
 
-    const textContent = response.content[0]
-    const reply =
-      textContent.type === "text" ? textContent.text : "..."
+    const reply = response.content
+      .filter((block) => block.type === "text")
+      .map((block) => block.text)
+      .join("")
 
     return NextResponse.json({ reply })
   } catch (error) {
