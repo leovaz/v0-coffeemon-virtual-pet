@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 30 30% 92%;
+    --foreground: 25 40% 12%;
+    --card: 35 30% 88%;
+    --card-foreground: 25 40% 12%;
+    --popover: 35 30% 88%;
+    --popover-foreground: 25 40% 12%;
+    --primary: 25 60% 28%;
+    --primary-foreground: 40 40% 95%;
+    --secondary: 35 25% 78%;
+    --secondary-foreground: 25 40% 12%;
+    --muted: 35 20% 82%;
+    --muted-foreground: 25 15% 45%;
+    --accent: 120 40% 35%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 25 30% 50%;
+    --input: 25 30% 50%;
+    --ring: 25 60% 28%;
+    --radius: 0rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* NES.css overrides for retro coffee theme */
+body {
+  font-family: var(--font-press-start), 'Press Start 2P', cursive;
+  image-rendering: pixelated;
+}
+
+/* Pixel art background pattern */
+.coffee-farm-bg {
+  background-color: #c8b88a;
+  background-image:
+    radial-gradient(circle at 20% 80%, #6b8f3a 2px, transparent 2px),
+    radial-gradient(circle at 40% 70%, #5a7d2f 3px, transparent 3px),
+    radial-gradient(circle at 60% 85%, #6b8f3a 2px, transparent 2px),
+    radial-gradient(circle at 80% 75%, #5a7d2f 2px, transparent 2px),
+    radial-gradient(circle at 10% 90%, #4a6d1f 3px, transparent 3px),
+    radial-gradient(circle at 90% 90%, #6b8f3a 2px, transparent 2px),
+    linear-gradient(to bottom, #87ceeb 0%, #87ceeb 40%, #c8b88a 40%, #c8b88a 70%, #6b8f3a 70%, #6b8f3a 100%);
+  background-size: 100% 100%;
+  background-attachment: fixed;
+}
+
+/* Bounce animation for the Coffeemon */
+@keyframes bounce-pixel {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes blink-pixel {
+  0%, 90%, 100% { opacity: 1; }
+  95% { opacity: 0; }
+}
+
+.coffeemon-bounce {
+  animation: bounce-pixel 2s ease-in-out infinite;
+}
+
+.coffeemon-blink {
+  animation: blink-pixel 4s ease-in-out infinite;
+}
+
+/* NES.css style overrides */
+.nes-container {
+  font-family: var(--font-press-start), 'Press Start 2P', cursive;
+}
+
+.nes-progress {
+  height: 28px;
+}
+
+/* Custom progress bar colors */
+.nes-progress.is-water::-webkit-progress-value {
+  background-color: #209cee;
+}
+.nes-progress.is-water::-moz-progress-bar {
+  background-color: #209cee;
+}
+
+.nes-progress.is-sun::-webkit-progress-value {
+  background-color: #f5c518;
+}
+.nes-progress.is-sun::-moz-progress-bar {
+  background-color: #f5c518;
+}
+
+.nes-progress.is-quality::-webkit-progress-value {
+  background-color: #4caf50;
+}
+.nes-progress.is-quality::-moz-progress-bar {
+  background-color: #4caf50;
+}
+
+/* Selection card styles */
+.origin-card {
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.origin-card:hover {
+  transform: scale(1.02);
+}
+.origin-card.selected {
+  box-shadow: 0 0 0 4px #f5c518;
+}
+
+/* Type background colors */
+.type-bg-arabica { background-color: #2d6a2e; }
+.type-bg-robusta { background-color: #6b2020; }
+.type-bg-geisha { background-color: #5b2d7a; }
+
+/* Action button cooldown */
+@keyframes cooldown-fill {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+.action-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
