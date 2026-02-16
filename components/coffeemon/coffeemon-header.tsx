@@ -1,13 +1,13 @@
 "use client"
 
-import { usePrivy } from "@privy-io/react-auth"
+import { usePrivySafe } from "@/lib/use-privy-safe"
 
 interface CoffeemonHeaderProps {
   coins: number
 }
 
 export function CoffeemonHeader({ coins }: CoffeemonHeaderProps) {
-  const { authenticated, user, login, logout, ready } = usePrivy()
+  const { authenticated, user, login, logout, ready } = usePrivySafe()
   const userEmail = user?.email?.address ?? null
 
   return (

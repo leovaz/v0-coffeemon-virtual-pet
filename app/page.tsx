@@ -5,7 +5,7 @@ import { CreateScreen } from "@/components/coffeemon/create-screen"
 import { CoffeemonView } from "@/components/coffeemon/coffeemon-view"
 import { CoffeemonHeader } from "@/components/coffeemon/coffeemon-header"
 import type { CoffeemonData, ChatMessage, CoffeemonMemory } from "@/lib/coffeemon-types"
-import { usePrivy } from "@privy-io/react-auth"
+import { usePrivySafe } from "@/lib/use-privy-safe"
 import {
   loadUserData,
   saveUserData,
@@ -14,7 +14,7 @@ import {
 } from "@/lib/user-storage"
 
 export default function Page() {
-  const privy = usePrivy()
+  const privy = usePrivySafe()
   const userEmail: string | null = privy.authenticated
     ? privy.user?.email?.address ?? null
     : null
