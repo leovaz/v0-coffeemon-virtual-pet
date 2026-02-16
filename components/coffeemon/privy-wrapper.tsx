@@ -1,4 +1,15 @@
-"use client"
+"use client";
+
+import { PrivyProvider } from '@privy-io/react-auth';
+
+export function PrivyWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <PrivyProvider appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID!}>
+      {children}
+    </PrivyProvider>
+  );
+}
+
 
 import { PrivyProvider, usePrivy } from "@privy-io/react-auth"
 import { PrivySafeContext, type PrivySafeState } from "@/lib/use-privy-safe"
