@@ -14,7 +14,11 @@ const fallback: PrivySafeState = {
   ready: true,
   authenticated: false,
   user: null,
-  login: () => {},
+  login: () => {
+    alert(
+      "Autenticacion no disponible.\n\nPara activar Privy, configura NEXT_PUBLIC_PRIVY_APP_ID con un App ID valido desde privy.io/dashboard."
+    )
+  },
   logout: async () => {},
 }
 
