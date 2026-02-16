@@ -21,11 +21,17 @@ function PrivyBridge({ children }: { children: React.ReactNode }) {
   )
 }
 
+function isValidPrivyAppId(id: string | undefined): id is string {
+  // Privy app IDs follow the pattern "cl..." or similar alphanumeric strings
+  // Must be truthy and at least 10 chars to be plausibly valid
+  return typeof id === "string" && id.length >= 10 && !/\s/.test(id)
+}
+
 export function PrivyWrapper({ children }: { children: React.ReactNode }) {
   const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID
 
-  if (!appId) {
-    // No Privy configured -- use fallback context (guest mode)
+  if (!isValidPrivyAppId(appId)) {
+    // No valid Privy configured -- use fallback context (guest mode)
     return <>{children}</>
   }
 
