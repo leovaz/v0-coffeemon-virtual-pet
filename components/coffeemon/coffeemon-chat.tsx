@@ -1,0 +1,341 @@
+"use client"
+
+import { useState, useEffect, useRef, useCallback } from "react"
+import type {
+  CoffeemonData,
+  ChatMessage,
+  CoffeemonMemory,
+} from "@/lib/coffeemon-types"
+
+const CHAT_STORAGE_KEY = "coffeemon-chat"
+const MEMORY_STORAGE_KEY = "coffeemon-memories"
+const MAX_MESSAGES = 20
+const MAX_MEMORIES = 10
+
+const MEMORY_PATTERNS = [
+  /me gusta\s+(.+)/i,
+  /prefiero\s+(.+)/i,
+  /mi nombre es\s+(.+)/i,
+  /tengo una?\s+(.+)/i,
+  /me encanta\s+(.+)/i,
+  /soy\s+(.+)/i,
+  /trabajo en\s+(.+)/i,
+  /mi favorit[oa]\s+(.+)/i,
+  /me llamo\s+(.+)/i,
+  /vivo en\s+(.+)/i,
+]
+
+interface CoffeemonChatProps {
+  data: CoffeemonData
+  onStatsChange: (data: CoffeemonData) => void
+}
+
+interface StatPopup {
+  id: string
+  text: string
+  color: string
+}
+
+function loadMessages(): ChatMessage[] {
+  if (typeof window === "undefined") return []
+  try {
+    const raw = localStorage.getItem(CHAT_STORAGE_KEY)
+    if (!raw) return []
+    return JSON.parse(raw) as ChatMessage[]
+  } catch {
+    return []
+  }
+}
+
+function saveMessages(messages: ChatMessage[]) {
+  const trimmed = messages.slice(-MAX_MESSAGES)
+  localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(trimmed))
+}
+
+function loadMemories(): CoffeemonMemory[] {
+  if (typeof window === "undefined") return []
+  try {
+    const raw = localStorage.getItem(MEMORY_STORAGE_KEY)
+    if (!raw) return []
+    return JSON.parse(raw) as CoffeemonMemory[]
+  } catch {
+    return []
+  }
+}
+
+function saveMemories(memories: CoffeemonMemory[]) {
+  localStorage.setItem(MEMORY_STORAGE_KEY, JSON.stringify(memories))
+}
+
+function detectMemory(text: string): string | null {
+  for (const pattern of MEMORY_PATTERNS) {
+    const match = text.match(pattern)
+    if (match) {
+      return text.trim()
+    }
+  }
+  return null
+}
+
+function clamp(val: number) {
+  return Math.max(0, Math.min(100, val))
+}
+
+export function CoffeemonChat({ data, onStatsChange }: CoffeemonChatProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [memories, setMemories] = useState<CoffeemonMemory[]>([])
+  const [input, setInput] = useState("")
+  const [isTyping, setIsTyping] = useState(false)
+  const [statPopups, setStatPopups] = useState<StatPopup[]>([])
+  const [consecutiveCount, setConsecutiveCount] = useState(0)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setMessages(loadMessages())
+    setMemories(loadMemories())
+  }, [])
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [messages, isTyping])
+
+  const showStatPopup = useCallback((text: string, color: string) => {
+    const id = crypto.randomUUID()
+    setStatPopups((prev) => [...prev, { id, text, color }])
+    setTimeout(() => {
+      setStatPopups((prev) => prev.filter((p) => p.id !== id))
+    }, 2000)
+  }, [])
+
+  async function handleSend() {
+    const trimmed = input.trim()
+    if (!trimmed || isTyping) return
+
+    const userMessage: ChatMessage = { role: "user", content: trimmed }
+    const updatedMessages = [...messages, userMessage]
+    setMessages(updatedMessages)
+    saveMessages(updatedMessages)
+    setInput("")
+
+    // Stats affected by chat
+    const newConsecutive = consecutiveCount + 1
+    setConsecutiveCount(newConsecutive)
+
+    let energyChange = -3
+    if (newConsecutive > 5) {
+      energyChange -= 5
+      showStatPopup("-5 Energia (fatiga)", "#c0392b")
+    }
+
+    const updatedData = {
+      ...data,
+      quality: clamp(data.quality + 5),
+      energy: clamp(data.energy + energyChange),
+    }
+    onStatsChange(updatedData)
+    showStatPopup("+5 Calidad", "#27ae60")
+    showStatPopup(`${energyChange} Energia`, "#e67e22")
+
+    // Detect memory
+    const memoryContent = detectMemory(trimmed)
+    let currentMemories = memories
+    if (memoryContent) {
+      const alreadyExists = memories.some(
+        (m) => m.content.toLowerCase() === memoryContent.toLowerCase()
+      )
+      if (!alreadyExists) {
+        const newMemory: CoffeemonMemory = {
+          id: crypto.randomUUID(),
+          content: memoryContent,
+          createdAt: new Date().toISOString(),
+        }
+        currentMemories = [...memories, newMemory].slice(-MAX_MEMORIES)
+        setMemories(currentMemories)
+        saveMemories(currentMemories)
+      }
+    }
+
+    // Show typing indicator
+    setIsTyping(true)
+
+    try {
+      // Artificial delay for personality feel
+      await new Promise((r) => setTimeout(r, 1000 + Math.random() * 500))
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: updatedMessages.slice(-10),
+          stats: {
+            hydration: updatedData.hydration,
+            energy: updatedData.energy,
+            quality: updatedData.quality,
+          },
+          memories: currentMemories,
+          name: data.name,
+          type: data.type,
+        }),
+      })
+
+      const json = await res.json()
+      const assistantMessage: ChatMessage = {
+        role: "assistant",
+        content: json.reply,
+      }
+
+      const finalMessages = [...updatedMessages, assistantMessage]
+      setMessages(finalMessages)
+      saveMessages(finalMessages)
+    } catch {
+      const errorMessage: ChatMessage = {
+        role: "assistant",
+        content: "Zzz... se me enredo una raiz. Intenta de nuevo. \u{1F331}",
+      }
+      const finalMessages = [...updatedMessages, errorMessage]
+      setMessages(finalMessages)
+      saveMessages(finalMessages)
+    } finally {
+      setIsTyping(false)
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
+
+  return (
+    <div
+      className="nes-container is-rounded"
+      style={{ backgroundColor: "#faf3e0" }}
+    >
+      <h2
+        className="text-center mb-4"
+        style={{ fontSize: "0.7rem", color: "#2d1b0e" }}
+      >
+        {"Habla con tu Coffeemon \u2615"}
+      </h2>
+
+      {/* Memories indicator */}
+      {memories.length > 0 && (
+        <div className="text-center mb-3">
+          <span
+            style={{
+              fontSize: "0.55rem",
+              color: "#6b8f3a",
+              backgroundColor: "#e8f5e9",
+              padding: "4px 10px",
+              border: "2px solid #6b8f3a",
+            }}
+          >
+            {"\u{1F9E0} "}
+            {memories.length}
+            {" memorias cultivadas"}
+          </span>
+        </div>
+      )}
+
+      {/* Stat popups */}
+      <div className="chat-stat-popups">
+        {statPopups.map((popup) => (
+          <div
+            key={popup.id}
+            className="chat-stat-popup"
+            style={{ color: popup.color }}
+          >
+            {popup.text}
+          </div>
+        ))}
+      </div>
+
+      {/* Messages area */}
+      <div
+        ref={scrollRef}
+        className="chat-messages-area mb-4"
+        style={{
+          height: "260px",
+          overflowY: "auto",
+          backgroundColor: "#fff8e7",
+          border: "4px solid #2d1b0e",
+          padding: "12px",
+        }}
+      >
+        {messages.length === 0 && !isTyping && (
+          <div
+            className="text-center"
+            style={{
+              color: "#8a7a6a",
+              fontSize: "0.55rem",
+              lineHeight: 2,
+              paddingTop: "80px",
+            }}
+          >
+            {"Escribe algo para hablar con "}
+            {data.name}
+            {"..."}
+          </div>
+        )}
+
+        {messages.map((msg, i) => (
+          <div
+            key={i}
+            className={`chat-bubble-wrapper ${
+              msg.role === "user" ? "chat-user" : "chat-assistant"
+            }`}
+          >
+            <div
+              className={`chat-bubble ${
+                msg.role === "user" ? "chat-bubble-user" : "chat-bubble-assistant"
+              }`}
+            >
+              {msg.role === "assistant" && (
+                <span className="chat-bubble-name">{data.name}</span>
+              )}
+              <p className="chat-bubble-text">{msg.content}</p>
+            </div>
+          </div>
+        ))}
+
+        {isTyping && (
+          <div className="chat-bubble-wrapper chat-assistant">
+            <div className="chat-bubble chat-bubble-assistant">
+              <span className="chat-bubble-name">{data.name}</span>
+              <p className="chat-bubble-text chat-typing">
+                {"Coffeemon esta creciendo ideas\u2026"}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Input area */}
+      <div className="flex gap-2 items-end">
+        <input
+          type="text"
+          className="nes-input flex-1"
+          placeholder={"Escribe un mensaje..."}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={isTyping}
+          style={{ fontSize: "0.6rem" }}
+          aria-label="Mensaje para tu Coffeemon"
+        />
+        <button
+          type="button"
+          className="nes-btn is-primary"
+          onClick={handleSend}
+          disabled={isTyping || !input.trim()}
+          style={{ fontSize: "0.6rem", whiteSpace: "nowrap" }}
+        >
+          {"Enviar"}
+        </button>
+      </div>
+    </div>
+  )
+}

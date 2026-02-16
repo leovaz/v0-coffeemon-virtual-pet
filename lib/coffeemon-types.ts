@@ -8,3 +8,14 @@ export interface CoffeemonData {
   quality: number
   createdAt: string
 }
+
+export interface ChatMessage {
+  role: "user" | "assistant"
+  content: string
+}
+
+export interface CoffeemonMemory {
+  id: string
+  content: string
+  createdAt: string
+}

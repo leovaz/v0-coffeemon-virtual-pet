@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react"
 import type { CoffeemonData } from "@/lib/coffeemon-types"
+import { CoffeemonChat } from "@/components/coffeemon/coffeemon-chat"
 
 const STAGE_EMOJIS = [
   { min: 0, emoji: "\u{1F331}", label: "Semilla" },
@@ -231,6 +232,11 @@ export function CoffeemonView({ data, onUpdate, onReset }: CoffeemonViewProps) {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Chat section */}
+        <div className="mb-4">
+          <CoffeemonChat data={data} onStatsChange={onUpdate} />
         </div>
 
         {/* Footer info */}

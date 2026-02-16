@@ -24,6 +24,8 @@ function saveData(data: CoffeemonData) {
 
 function clearData() {
   localStorage.removeItem(STORAGE_KEY)
+  localStorage.removeItem("coffeemon-chat")
+  localStorage.removeItem("coffeemon-memories")
 }
 
 export default function Page() {
