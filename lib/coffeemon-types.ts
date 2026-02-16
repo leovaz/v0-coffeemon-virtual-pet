@@ -19,3 +19,18 @@ export interface CoffeemonMemory {
   content: string
   createdAt: string
 }
+
+export interface HistoryEntry {
+  id: string
+  action: string
+  coins: number // positive = earned, negative = spent
+  timestamp: string
+}
+
+export interface UserData {
+  coffeemon: CoffeemonData | null
+  coins: number
+  history: HistoryEntry[]
+  chat: ChatMessage[]
+  memories: CoffeemonMemory[]
+}

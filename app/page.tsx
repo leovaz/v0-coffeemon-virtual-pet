@@ -1,56 +1,103 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { CreateScreen } from "@/components/coffeemon/create-screen"
 import { CoffeemonView } from "@/components/coffeemon/coffeemon-view"
-import type { CoffeemonData } from "@/lib/coffeemon-types"
-
-const STORAGE_KEY = "coffeemon-data"
-
-function loadData(): CoffeemonData | null {
-  if (typeof window === "undefined") return null
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    return JSON.parse(raw) as CoffeemonData
-  } catch {
-    return null
-  }
-}
-
-function saveData(data: CoffeemonData) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-}
-
-function clearData() {
-  localStorage.removeItem(STORAGE_KEY)
-  localStorage.removeItem("coffeemon-chat")
-  localStorage.removeItem("coffeemon-memories")
-}
+import { CoffeemonHeader } from "@/components/coffeemon/coffeemon-header"
+import type { CoffeemonData, ChatMessage, CoffeemonMemory } from "@/lib/coffeemon-types"
+import { usePrivy } from "@privy-io/react-auth"
+import {
+  loadUserData,
+  saveUserData,
+  clearUserData,
+  addHistoryEntry,
+} from "@/lib/user-storage"
 
 export default function Page() {
+  const privy = usePrivy()
+  const userEmail: string | null = privy.authenticated
+    ? privy.user?.email?.address ?? null
+    : null
+
   const [coffeemon, setCoffeemon] = useState<CoffeemonData | null>(null)
+  const [coins, setCoins] = useState(100)
+  const [history, setHistory] = useState<{ id: string; action: string; coins: number; timestamp: string }[]>([])
+  const [chat, setChat] = useState<ChatMessage[]>([])
+  const [memories, setMemories] = useState<CoffeemonMemory[]>([])
   const [loaded, setLoaded] = useState(false)
 
+  // Load data when user changes or on mount
   useEffect(() => {
-    const saved = loadData()
-    if (saved) setCoffeemon(saved)
+    if (!privy.ready) return
+    const data = loadUserData(userEmail)
+    setCoffeemon(data.coffeemon)
+    setCoins(data.coins)
+    setHistory(data.history)
+    setChat(data.chat)
+    setMemories(data.memories)
     setLoaded(true)
-  }, [])
+  }, [userEmail, privy.ready])
+
+  const persist = useCallback(
+    (updates: Partial<{ coffeemon: CoffeemonData | null; coins: number; history: typeof history; chat: ChatMessage[]; memories: CoffeemonMemory[] }>) => {
+      const currentData = loadUserData(userEmail)
+      const merged = {
+        coffeemon: updates.coffeemon !== undefined ? updates.coffeemon : currentData.coffeemon,
+        coins: updates.coins !== undefined ? updates.coins : currentData.coins,
+        history: updates.history !== undefined ? updates.history : currentData.history,
+        chat: updates.chat !== undefined ? updates.chat : currentData.chat,
+        memories: updates.memories !== undefined ? updates.memories : currentData.memories,
+      }
+      saveUserData(userEmail, merged)
+    },
+    [userEmail]
+  )
 
   function handleCreate(data: CoffeemonData) {
-    saveData(data)
     setCoffeemon(data)
+    persist({ coffeemon: data })
+    addHistoryEntry(userEmail, "Coffeemon creado", 0)
+    // Reload history
+    const reloaded = loadUserData(userEmail)
+    setHistory(reloaded.history)
   }
 
   function handleUpdate(data: CoffeemonData) {
-    saveData(data)
     setCoffeemon(data)
+    persist({ coffeemon: data })
+  }
+
+  function handleCoinsChange(amount: number) {
+    setCoins((prev) => {
+      const next = Math.max(0, prev + amount)
+      persist({ coins: next })
+      return next
+    })
+  }
+
+  function handleHistoryAdd(action: string, coinAmount: number) {
+    addHistoryEntry(userEmail, action, coinAmount)
+    const reloaded = loadUserData(userEmail)
+    setHistory(reloaded.history)
+  }
+
+  function handleChatUpdate(msgs: ChatMessage[]) {
+    setChat(msgs)
+    persist({ chat: msgs })
+  }
+
+  function handleMemoriesUpdate(mems: CoffeemonMemory[]) {
+    setMemories(mems)
+    persist({ memories: mems })
   }
 
   function handleReset() {
-    clearData()
+    clearUserData(userEmail)
     setCoffeemon(null)
+    setCoins(100)
+    setHistory([])
+    setChat([])
+    setMemories([])
   }
 
   // Prevent flash while loading
@@ -67,10 +114,28 @@ export default function Page() {
   }
 
   if (!coffeemon) {
-    return <CreateScreen onCreate={handleCreate} />
+    return (
+      <div className="coffee-farm-bg min-h-screen">
+        <CoffeemonHeader coins={coins} />
+        <CreateScreen onCreate={handleCreate} />
+      </div>
+    )
   }
 
   return (
-    <CoffeemonView data={coffeemon} onUpdate={handleUpdate} onReset={handleReset} />
+    <CoffeemonView
+      data={coffeemon}
+      coins={coins}
+      history={history}
+      chat={chat}
+      memories={memories}
+      userEmail={userEmail}
+      onUpdate={handleUpdate}
+      onCoinsChange={handleCoinsChange}
+      onHistoryAdd={handleHistoryAdd}
+      onChatUpdate={handleChatUpdate}
+      onMemoriesUpdate={handleMemoriesUpdate}
+      onReset={handleReset}
+    />
   )
 }

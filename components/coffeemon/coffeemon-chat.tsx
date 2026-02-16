@@ -7,9 +7,6 @@ import type {
   CoffeemonMemory,
 } from "@/lib/coffeemon-types"
 
-const CHAT_STORAGE_KEY = "coffeemon-chat"
-const MEMORY_STORAGE_KEY = "coffeemon-memories"
-const MAX_MESSAGES = 20
 const MAX_MEMORIES = 10
 
 const MEMORY_PATTERNS = [
@@ -27,44 +24,21 @@ const MEMORY_PATTERNS = [
 
 interface CoffeemonChatProps {
   data: CoffeemonData
+  coins: number
+  chat: ChatMessage[]
+  memories: CoffeemonMemory[]
+  userEmail: string | null
   onStatsChange: (data: CoffeemonData) => void
+  onCoinsChange: (amount: number) => void
+  onHistoryAdd: (action: string, coins: number) => void
+  onChatUpdate: (messages: ChatMessage[]) => void
+  onMemoriesUpdate: (memories: CoffeemonMemory[]) => void
 }
 
 interface StatPopup {
   id: string
   text: string
   color: string
-}
-
-function loadMessages(): ChatMessage[] {
-  if (typeof window === "undefined") return []
-  try {
-    const raw = localStorage.getItem(CHAT_STORAGE_KEY)
-    if (!raw) return []
-    return JSON.parse(raw) as ChatMessage[]
-  } catch {
-    return []
-  }
-}
-
-function saveMessages(messages: ChatMessage[]) {
-  const trimmed = messages.slice(-MAX_MESSAGES)
-  localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(trimmed))
-}
-
-function loadMemories(): CoffeemonMemory[] {
-  if (typeof window === "undefined") return []
-  try {
-    const raw = localStorage.getItem(MEMORY_STORAGE_KEY)
-    if (!raw) return []
-    return JSON.parse(raw) as CoffeemonMemory[]
-  } catch {
-    return []
-  }
-}
-
-function saveMemories(memories: CoffeemonMemory[]) {
-  localStorage.setItem(MEMORY_STORAGE_KEY, JSON.stringify(memories))
 }
 
 function detectMemory(text: string): string | null {
@@ -81,19 +55,33 @@ function clamp(val: number) {
   return Math.max(0, Math.min(100, val))
 }
 
-export function CoffeemonChat({ data, onStatsChange }: CoffeemonChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [memories, setMemories] = useState<CoffeemonMemory[]>([])
+export function CoffeemonChat({
+  data,
+  coins,
+  chat,
+  memories,
+  onStatsChange,
+  onCoinsChange,
+  onHistoryAdd,
+  onChatUpdate,
+  onMemoriesUpdate,
+}: CoffeemonChatProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>(chat)
+  const [currentMemories, setCurrentMemories] = useState<CoffeemonMemory[]>(memories)
   const [input, setInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
   const [statPopups, setStatPopups] = useState<StatPopup[]>([])
   const [consecutiveCount, setConsecutiveCount] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  // Sync with parent state
   useEffect(() => {
-    setMessages(loadMessages())
-    setMemories(loadMemories())
-  }, [])
+    setMessages(chat)
+  }, [chat])
+
+  useEffect(() => {
+    setCurrentMemories(memories)
+  }, [memories])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -109,6 +97,13 @@ export function CoffeemonChat({ data, onStatsChange }: CoffeemonChatProps) {
     }, 2000)
   }, [])
 
+  // Anti-farming coin reward logic
+  function calculateCoinReward(currentCoins: number): number {
+    const probability = currentCoins < 100 ? 0.4 : 0.15
+    if (Math.random() > probability) return 0
+    return Math.floor(Math.random() * 4) + 2 // 2-5 coins
+  }
+
   async function handleSend() {
     const trimmed = input.trim()
     if (!trimmed || isTyping) return
@@ -116,7 +111,7 @@ export function CoffeemonChat({ data, onStatsChange }: CoffeemonChatProps) {
     const userMessage: ChatMessage = { role: "user", content: trimmed }
     const updatedMessages = [...messages, userMessage]
     setMessages(updatedMessages)
-    saveMessages(updatedMessages)
+    onChatUpdate(updatedMessages)
     setInput("")
 
     // Stats affected by chat
@@ -138,11 +133,19 @@ export function CoffeemonChat({ data, onStatsChange }: CoffeemonChatProps) {
     showStatPopup("+5 Calidad", "#27ae60")
     showStatPopup(`${energyChange} Energia`, "#e67e22")
 
+    // Coin reward
+    const coinReward = calculateCoinReward(coins)
+    if (coinReward > 0) {
+      onCoinsChange(coinReward)
+      onHistoryAdd("Chat con Coffeemon", coinReward)
+      showStatPopup(`+${coinReward} $BEANS`, "#ff7a00")
+    }
+
     // Detect memory
     const memoryContent = detectMemory(trimmed)
-    let currentMemories = memories
+    let updatedMemories = currentMemories
     if (memoryContent) {
-      const alreadyExists = memories.some(
+      const alreadyExists = currentMemories.some(
         (m) => m.content.toLowerCase() === memoryContent.toLowerCase()
       )
       if (!alreadyExists) {
@@ -151,9 +154,9 @@ export function CoffeemonChat({ data, onStatsChange }: CoffeemonChatProps) {
           content: memoryContent,
           createdAt: new Date().toISOString(),
         }
-        currentMemories = [...memories, newMemory].slice(-MAX_MEMORIES)
-        setMemories(currentMemories)
-        saveMemories(currentMemories)
+        updatedMemories = [...currentMemories, newMemory].slice(-MAX_MEMORIES)
+        setCurrentMemories(updatedMemories)
+        onMemoriesUpdate(updatedMemories)
       }
     }
 
@@ -161,7 +164,6 @@ export function CoffeemonChat({ data, onStatsChange }: CoffeemonChatProps) {
     setIsTyping(true)
 
     try {
-      // Artificial delay for personality feel
       await new Promise((r) => setTimeout(r, 1000 + Math.random() * 500))
 
       const res = await fetch("/api/chat", {
@@ -174,7 +176,7 @@ export function CoffeemonChat({ data, onStatsChange }: CoffeemonChatProps) {
             energy: updatedData.energy,
             quality: updatedData.quality,
           },
-          memories: currentMemories,
+          memories: updatedMemories,
           name: data.name,
           type: data.type,
         }),
@@ -188,7 +190,7 @@ export function CoffeemonChat({ data, onStatsChange }: CoffeemonChatProps) {
 
       const finalMessages = [...updatedMessages, assistantMessage]
       setMessages(finalMessages)
-      saveMessages(finalMessages)
+      onChatUpdate(finalMessages)
     } catch {
       const errorMessage: ChatMessage = {
         role: "assistant",
@@ -196,7 +198,7 @@ export function CoffeemonChat({ data, onStatsChange }: CoffeemonChatProps) {
       }
       const finalMessages = [...updatedMessages, errorMessage]
       setMessages(finalMessages)
-      saveMessages(finalMessages)
+      onChatUpdate(finalMessages)
     } finally {
       setIsTyping(false)
     }
@@ -218,11 +220,11 @@ export function CoffeemonChat({ data, onStatsChange }: CoffeemonChatProps) {
         className="text-center mb-4"
         style={{ fontSize: "0.7rem", color: "#2d1b0e" }}
       >
-        {"Habla con tu Coffeemon \u2615"}
+        {"Habla con tu Coffeemon"}
       </h2>
 
       {/* Memories indicator */}
-      {memories.length > 0 && (
+      {currentMemories.length > 0 && (
         <div className="text-center mb-3">
           <span
             style={{
@@ -234,7 +236,7 @@ export function CoffeemonChat({ data, onStatsChange }: CoffeemonChatProps) {
             }}
           >
             {"\u{1F9E0} "}
-            {memories.length}
+            {currentMemories.length}
             {" memorias cultivadas"}
           </span>
         </div>

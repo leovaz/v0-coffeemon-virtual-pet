@@ -79,7 +79,7 @@ export function CreateScreen({ onCreate }: CreateScreenProps) {
   }
 
   return (
-    <div className="coffee-farm-bg min-h-screen flex items-center justify-center p-4">
+    <div className="flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
         <div className="nes-container is-rounded with-title" style={{ backgroundColor: "#faf3e0" }}>
           <p className="title" style={{ backgroundColor: "#faf3e0", color: "#2d1b0e" }}>

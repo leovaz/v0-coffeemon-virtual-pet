@@ -237,3 +237,99 @@ body {
   background-color: #c8b88a;
   border: 2px solid #2d1b0e;
 }
+
+/* Coin popup animations */
+.coin-popup-container {
+  position: fixed;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+@keyframes coin-float {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  50% { opacity: 0.9; transform: translateY(-20px) scale(1.1); }
+  100% { opacity: 0; transform: translateY(-40px) scale(0.8); }
+}
+
+.coin-popup {
+  font-size: 0.7rem;
+  font-weight: bold;
+  animation: coin-float 2.5s ease-out forwards;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+}
+
+/* Feed button special style */
+.feed-btn {
+  background-color: #ff7a00 !important;
+  color: #fff !important;
+  border-color: #cc6200 !important;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.feed-btn:hover:not(:disabled) {
+  transform: scale(1.03);
+  box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.4);
+}
+
+.feed-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.feed-btn.is-disabled {
+  background-color: #8a7a6a !important;
+  border-color: #6a5a4a !important;
+  opacity: 0.5;
+}
+
+/* Feed reaction animation */
+@keyframes feed-pulse {
+  0% { opacity: 0; transform: scale(0.5); }
+  30% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0; transform: scale(1) translateY(-10px); }
+}
+
+.feed-reaction {
+  animation: feed-pulse 2.5s ease-out forwards;
+}
+
+/* Coins display in header */
+.coins-display {
+  transition: transform 0.2s;
+}
+
+/* Retro button hover effects */
+.nes-btn {
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.nes-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.nes-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* History toggle transition */
+.history-toggle-content {
+  transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+/* Header sticky styles */
+header {
+  box-shadow: 0 4px 0 #1a0f06;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+  .nes-progress {
+    height: 20px;
+  }
+}
