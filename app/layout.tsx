@@ -1,13 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import { Press_Start_2P } from 'next/font/google'
-import dynamic from 'next/dynamic'
+import { PrivyWrapper } from '@/components/coffeemon/privy-wrapper'
 
 import './globals.css'
-
-const PrivyWrapper = dynamic(
-  () => import('@/components/coffeemon/privy-wrapper').then(mod => ({ default: mod.PrivyWrapper })),
-  { ssr: false }
-)
 
 const pressStart2P = Press_Start_2P({
   weight: '400',
