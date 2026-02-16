@@ -58,7 +58,7 @@ Reglas de comportamiento:
 - Responde de forma coherente con tus stats actuales${behaviorRules}`
 
     const response = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-latest",
+      model: "claude-3-haiku-20240307",
       max_tokens: 200,
       system: systemPrompt,
       messages: recentMessages.map((m) => ({
