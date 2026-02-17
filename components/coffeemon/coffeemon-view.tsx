@@ -63,6 +63,20 @@ export function CoffeemonView({
   })
   const [statPopups, setStatPopups] = useState<StatPopup[]>([])
   const [feedReaction, setFeedReaction] = useState("")
+  const [claimCooldown, setClaimCooldown] = useState(false)
+
+  // Check if user can claim free BEANS (cooldown: 3 minutes)
+  const CLAIM_COOLDOWN_KEY = "coffeemon_last_claim"
+  const CLAIM_COOLDOWN_MS = 3 * 60 * 1000 // 3 minutes
+  const CLAIM_AMOUNT = 25
+
+  const canClaim = (() => {
+    if (typeof window === "undefined") return false
+    if (claimCooldown) return false
+    const last = localStorage.getItem(CLAIM_COOLDOWN_KEY)
+    if (!last) return true
+    return Date.now() - parseInt(last, 10) > CLAIM_COOLDOWN_MS
+  })()
 
   const avgStats = (data.hydration + data.energy + data.quality) / 3
   const stage = [...STAGE_EMOJIS].reverse().find((s) => avgStats >= s.min) ?? STAGE_EMOJIS[0]
@@ -77,6 +91,17 @@ export function CoffeemonView({
       setStatPopups((prev) => prev.filter((p) => p.id !== id))
     }, 2500)
   }, [])
+
+  const handleClaim = useCallback(() => {
+    if (!canClaim) return
+    localStorage.setItem(CLAIM_COOLDOWN_KEY, Date.now().toString())
+    setClaimCooldown(true)
+    onCoinsChange(CLAIM_AMOUNT)
+    onHistoryAdd(`Reclamo diario de $BEANS`, CLAIM_AMOUNT)
+    showPopup(`+${CLAIM_AMOUNT} $BEANS`, "#ff7a00")
+    showPopup("Cosecha de emergencia!", "#27ae60")
+    setTimeout(() => setClaimCooldown(false), CLAIM_COOLDOWN_MS)
+  }, [canClaim, onCoinsChange, onHistoryAdd, showPopup])
 
   const handleAction = useCallback(
     (action: "water" | "sun" | "care") => {
@@ -359,6 +384,32 @@ export function CoffeemonView({
               </div>
             </div>
           </div>
+
+          {/* Claim free BEANS section */}
+          {coins < 10 && (
+            <div
+              className="nes-container is-rounded mb-4 text-center"
+              style={{ backgroundColor: "#fff3cd", borderColor: "#ff7a00" }}
+            >
+              <p
+                className="mb-3"
+                style={{ fontSize: "0.55rem", color: "#2d1b0e", lineHeight: 2 }}
+              >
+                {"Te quedaste sin $BEANS! Reclama una cosecha de emergencia."}
+              </p>
+              <button
+                type="button"
+                className={`nes-btn ${canClaim ? "is-warning" : ""}`}
+                disabled={!canClaim}
+                onClick={handleClaim}
+                style={{ fontSize: "0.55rem" }}
+              >
+                {canClaim
+                  ? `Reclamar ${CLAIM_AMOUNT} $BEANS`
+                  : "Espera unos minutos..."}
+              </button>
+            </div>
+          )}
 
           {/* Chat section */}
           <div className="mb-4">

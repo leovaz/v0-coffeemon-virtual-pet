@@ -104,8 +104,11 @@ export function CoffeemonChat({
   }, [])
 
   // Anti-farming coin reward logic
+  // At 0 coins: always reward (guaranteed escape)
+  // Below 100: 50% chance, above: 15% chance
   function calculateCoinReward(currentCoins: number): number {
-    const probability = currentCoins < 100 ? 0.4 : 0.15
+    if (currentCoins <= 0) return Math.floor(Math.random() * 4) + 3 // 3-6 guaranteed
+    const probability = currentCoins < 100 ? 0.5 : 0.15
     if (Math.random() > probability) return 0
     return Math.floor(Math.random() * 4) + 2 // 2-5 coins
   }
