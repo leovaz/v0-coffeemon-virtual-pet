@@ -25,7 +25,7 @@ function isValidPrivyAppId(id: string | undefined): id is string {
   // Real Privy app IDs start with "cl" followed by alphanumeric chars, e.g. "clxyz123abc..."
   if (typeof id !== "string") return false
   const trimmed = id.trim()
-  return trimmed.length >= 10 && /^cl[a-z0-9]+$/i.test(trimmed)
+  return trimmed.length >= 10 && !/\s/.test(trimmed)
 }
 
 export function PrivyWrapper({ children }: { children: React.ReactNode }) {
