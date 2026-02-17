@@ -1,9 +1,16 @@
-import type { UserData, CoffeemonData, ChatMessage, CoffeemonMemory, HistoryEntry } from "./coffeemon-types"
+import type { UserData, CoffeemonData, ChatMessage, CoffeemonMemory, HistoryEntry, TrainingData } from "./coffeemon-types"
 
 const INITIAL_COINS = 100
-const MAX_HISTORY = 10
+const MAX_HISTORY = 20
 const MAX_MESSAGES = 20
 const MAX_MEMORIES = 10
+const MAX_TRAINING_HISTORY = 20
+
+const INITIAL_TRAINING: TrainingData = {
+  totalPoints: 0,
+  stage: 1,
+  trainingHistory: [],
+}
 
 function getKey(email: string | null): string {
   if (!email) return "coffeemon_guest"
@@ -12,20 +19,21 @@ function getKey(email: string | null): string {
 
 export function loadUserData(email: string | null): UserData {
   if (typeof window === "undefined") {
-    return { coffeemon: null, coins: INITIAL_COINS, history: [], chat: [], memories: [] }
+    return { coffeemon: null, coins: INITIAL_COINS, history: [], chat: [], memories: [], training: INITIAL_TRAINING }
   }
 
   const key = getKey(email)
   try {
     const raw = localStorage.getItem(key)
     if (raw) {
-      const parsed = JSON.parse(raw) as UserData
+      const parsed = JSON.parse(raw) as Partial<UserData>
       return {
         coffeemon: parsed.coffeemon ?? null,
         coins: parsed.coins ?? INITIAL_COINS,
         history: parsed.history ?? [],
         chat: parsed.chat ?? [],
         memories: parsed.memories ?? [],
+        training: parsed.training ?? INITIAL_TRAINING,
       }
     }
   } catch {
@@ -37,17 +45,16 @@ export function loadUserData(email: string | null): UserData {
     try {
       const guestRaw = localStorage.getItem("coffeemon_guest")
       if (guestRaw) {
-        const guestData = JSON.parse(guestRaw) as UserData
-        // Migrate guest data to user
+        const guestData = JSON.parse(guestRaw) as Partial<UserData>
         const migrated: UserData = {
           coffeemon: guestData.coffeemon ?? null,
           coins: guestData.coins ?? INITIAL_COINS,
           history: guestData.history ?? [],
           chat: guestData.chat ?? [],
           memories: guestData.memories ?? [],
+          training: guestData.training ?? INITIAL_TRAINING,
         }
         saveUserData(email, migrated)
-        // Clear guest data after migration
         localStorage.removeItem("coffeemon_guest")
         return migrated
       }
@@ -56,7 +63,7 @@ export function loadUserData(email: string | null): UserData {
     }
   }
 
-  return { coffeemon: null, coins: INITIAL_COINS, history: [], chat: [], memories: [] }
+  return { coffeemon: null, coins: INITIAL_COINS, history: [], chat: [], memories: [], training: INITIAL_TRAINING }
 }
 
 export function saveUserData(email: string | null, data: UserData) {
@@ -67,6 +74,10 @@ export function saveUserData(email: string | null, data: UserData) {
     history: data.history.slice(-MAX_HISTORY),
     chat: data.chat.slice(-MAX_MESSAGES),
     memories: data.memories.slice(-MAX_MEMORIES),
+    training: {
+      ...data.training,
+      trainingHistory: (data.training?.trainingHistory ?? []).slice(-MAX_TRAINING_HISTORY),
+    },
   }
   localStorage.setItem(key, JSON.stringify(trimmed))
 }
@@ -115,5 +126,11 @@ export function updateChat(email: string | null, messages: ChatMessage[]) {
 export function updateMemories(email: string | null, memories: CoffeemonMemory[]) {
   const data = loadUserData(email)
   data.memories = memories.slice(-MAX_MEMORIES)
+  saveUserData(email, data)
+}
+
+export function updateTraining(email: string | null, training: TrainingData) {
+  const data = loadUserData(email)
+  data.training = training
   saveUserData(email, data)
 }

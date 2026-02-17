@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { CreateScreen } from "@/components/coffeemon/create-screen"
 import { CoffeemonView } from "@/components/coffeemon/coffeemon-view"
 import { CoffeemonHeader } from "@/components/coffeemon/coffeemon-header"
-import type { CoffeemonData, ChatMessage, CoffeemonMemory } from "@/lib/coffeemon-types"
+import type { CoffeemonData, ChatMessage, CoffeemonMemory, TrainingData } from "@/lib/coffeemon-types"
 import { usePrivySafe } from "@/lib/use-privy-safe"
 import {
   loadUserData,
@@ -24,6 +24,7 @@ export default function Page() {
   const [history, setHistory] = useState<{ id: string; action: string; coins: number; timestamp: string }[]>([])
   const [chat, setChat] = useState<ChatMessage[]>([])
   const [memories, setMemories] = useState<CoffeemonMemory[]>([])
+  const [training, setTraining] = useState<TrainingData>({ totalPoints: 0, stage: 1, trainingHistory: [] })
   const [loaded, setLoaded] = useState(false)
 
   // Load data when user changes or on mount
@@ -35,11 +36,12 @@ export default function Page() {
     setHistory(data.history)
     setChat(data.chat)
     setMemories(data.memories)
+    setTraining(data.training ?? { totalPoints: 0, stage: 1, trainingHistory: [] })
     setLoaded(true)
   }, [userEmail, privy.ready])
 
   const persist = useCallback(
-    (updates: Partial<{ coffeemon: CoffeemonData | null; coins: number; history: typeof history; chat: ChatMessage[]; memories: CoffeemonMemory[] }>) => {
+    (updates: Partial<{ coffeemon: CoffeemonData | null; coins: number; history: typeof history; chat: ChatMessage[]; memories: CoffeemonMemory[]; training: TrainingData }>) => {
       const currentData = loadUserData(userEmail)
       const merged = {
         coffeemon: updates.coffeemon !== undefined ? updates.coffeemon : currentData.coffeemon,
@@ -47,6 +49,7 @@ export default function Page() {
         history: updates.history !== undefined ? updates.history : currentData.history,
         chat: updates.chat !== undefined ? updates.chat : currentData.chat,
         memories: updates.memories !== undefined ? updates.memories : currentData.memories,
+        training: updates.training !== undefined ? updates.training : currentData.training,
       }
       saveUserData(userEmail, merged)
     },
@@ -91,6 +94,11 @@ export default function Page() {
     persist({ memories: mems })
   }
 
+  function handleTrainingUpdate(t: TrainingData) {
+    setTraining(t)
+    persist({ training: t })
+  }
+
   function handleReset() {
     clearUserData(userEmail)
     setCoffeemon(null)
@@ -98,6 +106,7 @@ export default function Page() {
     setHistory([])
     setChat([])
     setMemories([])
+    setTraining({ totalPoints: 0, stage: 1, trainingHistory: [] })
   }
 
   // Prevent flash while loading
@@ -129,12 +138,14 @@ export default function Page() {
       history={history}
       chat={chat}
       memories={memories}
+      training={training}
       userEmail={userEmail}
       onUpdate={handleUpdate}
       onCoinsChange={handleCoinsChange}
       onHistoryAdd={handleHistoryAdd}
       onChatUpdate={handleChatUpdate}
       onMemoriesUpdate={handleMemoriesUpdate}
+      onTrainingUpdate={handleTrainingUpdate}
       onReset={handleReset}
     />
   )

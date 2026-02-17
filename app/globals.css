@@ -365,6 +365,60 @@ header {
   animation: action-press 0.15s ease-out;
 }
 
+/* Training system styles */
+.training-tab-btn {
+  border-radius: 0 !important;
+}
+
+.training-category-card {
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.training-category-card:hover {
+  transform: scale(1.02);
+}
+
+.training-category-selected {
+  box-shadow: 0 0 0 3px #cc6200;
+}
+
+.training-image-preview {
+  image-rendering: auto;
+}
+
+@keyframes training-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.training-evaluating-text {
+  animation: training-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes training-score-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.training-score-number {
+  animation: training-score-pop 0.5s ease-out;
+}
+
+.training-result-card {
+  animation: status-slide-in 0.3s ease-out;
+}
+
+@keyframes evolution-glow {
+  0%, 100% { box-shadow: 0 0 10px #f5c518; }
+  50% { box-shadow: 0 0 25px #ff7a00, 0 0 40px #f5c518; }
+}
+
+.training-evolution-alert {
+  animation: evolution-glow 1.5s ease-in-out infinite;
+}
+
 /* Mobile responsive adjustments */
 @media (max-width: 640px) {
   .nes-progress {

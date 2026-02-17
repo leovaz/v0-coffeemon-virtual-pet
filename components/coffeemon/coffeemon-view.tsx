@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import type { CoffeemonData, HistoryEntry, ChatMessage, CoffeemonMemory } from "@/lib/coffeemon-types"
+import type { CoffeemonData, HistoryEntry, ChatMessage, CoffeemonMemory, TrainingData } from "@/lib/coffeemon-types"
 import { CoffeemonChat } from "@/components/coffeemon/coffeemon-chat"
 import { CoffeemonHeader } from "@/components/coffeemon/coffeemon-header"
 import { CoffeemonHistory } from "@/components/coffeemon/coffeemon-history"
+import { CoffeemonTraining } from "@/components/coffeemon/coffeemon-training"
 
 const STAGE_EMOJIS = [
   { min: 0, emoji: "\u{1F331}", label: "Semilla" },
@@ -25,18 +26,22 @@ interface StatPopup {
   color: string
 }
 
+type TabId = "main" | "training"
+
 interface CoffeemonViewProps {
   data: CoffeemonData
   coins: number
   history: HistoryEntry[]
   chat: ChatMessage[]
   memories: CoffeemonMemory[]
+  training: TrainingData
   userEmail: string | null
   onUpdate: (data: CoffeemonData) => void
   onCoinsChange: (amount: number) => void
   onHistoryAdd: (action: string, coins: number) => void
   onChatUpdate: (messages: ChatMessage[]) => void
   onMemoriesUpdate: (memories: CoffeemonMemory[]) => void
+  onTrainingUpdate: (training: TrainingData) => void
   onReset: () => void
 }
 
@@ -46,14 +51,17 @@ export function CoffeemonView({
   history,
   chat,
   memories,
+  training,
   userEmail,
   onUpdate,
   onCoinsChange,
   onHistoryAdd,
   onChatUpdate,
   onMemoriesUpdate,
+  onTrainingUpdate,
   onReset,
 }: CoffeemonViewProps) {
+  const [activeTab, setActiveTab] = useState<TabId>("main")
   const [showConfirm, setShowConfirm] = useState(false)
   const [cooldowns, setCooldowns] = useState({
     water: false,
@@ -196,6 +204,26 @@ export function CoffeemonView({
 
       <div className="p-4">
         <div className="max-w-2xl mx-auto">
+          {/* Tab navigation */}
+          <div className="flex gap-0 mb-4">
+            <button
+              type="button"
+              className={`nes-btn flex-1 training-tab-btn ${activeTab === "main" ? "is-primary" : ""}`}
+              onClick={() => setActiveTab("main")}
+              style={{ fontSize: "0.5rem" }}
+            >
+              {"\u{1F331} Cuidar"}
+            </button>
+            <button
+              type="button"
+              className={`nes-btn flex-1 training-tab-btn ${activeTab === "training" ? "is-warning" : ""}`}
+              onClick={() => setActiveTab("training")}
+              style={{ fontSize: "0.5rem" }}
+            >
+              {"\u{1F393} Entrenar"}
+            </button>
+          </div>
+
           {/* Stat popups overlay */}
           <div className="coin-popup-container">
             {statPopups.map((popup) => (
@@ -208,6 +236,23 @@ export function CoffeemonView({
               </div>
             ))}
           </div>
+
+          {/* Training tab */}
+          {activeTab === "training" && (
+            <div className="mb-4">
+              <CoffeemonTraining
+                data={data}
+                training={training}
+                onStatsChange={onUpdate}
+                onTrainingUpdate={onTrainingUpdate}
+                onCoinsChange={onCoinsChange}
+                onHistoryAdd={onHistoryAdd}
+              />
+            </div>
+          )}
+
+          {/* Main tab content */}
+          {activeTab === "main" && (<>
 
           {/* Top bar with reset */}
           <div className="nes-container is-rounded mb-4" style={{ backgroundColor: "#faf3e0" }}>
@@ -429,6 +474,8 @@ export function CoffeemonView({
 
           {/* History */}
           <CoffeemonHistory history={history} />
+
+          </>)}
 
           {/* Footer info */}
           <div className="nes-container is-rounded" style={{ backgroundColor: "#faf3e0" }}>
