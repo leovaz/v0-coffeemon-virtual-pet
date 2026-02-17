@@ -327,6 +327,44 @@ header {
   box-shadow: 0 4px 0 #1a0f06;
 }
 
+/* Status toast */
+@keyframes status-slide-in {
+  0% { opacity: 0; transform: translateY(-8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.status-toast {
+  animation: status-slide-in 0.25s ease-out;
+}
+
+/* Progress bar fill animation */
+.nes-progress {
+  transition: value 0.3s ease-out;
+}
+
+/* Coin bounce on change */
+@keyframes coin-bump {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.25); }
+  60% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+.coins-bump {
+  animation: coin-bump 0.4s ease-out;
+}
+
+/* Action button press effect */
+@keyframes action-press {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+
+.action-pressed {
+  animation: action-press 0.15s ease-out;
+}
+
 /* Mobile responsive adjustments */
 @media (max-width: 640px) {
   .nes-progress {

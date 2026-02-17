@@ -70,6 +70,7 @@ export function CoffeemonChat({
   const [currentMemories, setCurrentMemories] = useState<CoffeemonMemory[]>(memories)
   const [input, setInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const [statusMessage, setStatusMessage] = useState<{ text: string; type: "info" | "success" | "error" } | null>(null)
   const [statPopups, setStatPopups] = useState<StatPopup[]>([])
   const [consecutiveCount, setConsecutiveCount] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -88,6 +89,11 @@ export function CoffeemonChat({
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [messages, isTyping])
+
+  const showStatus = useCallback((text: string, type: "info" | "success" | "error") => {
+    setStatusMessage({ text, type })
+    setTimeout(() => setStatusMessage(null), 2500)
+  }, [])
 
   const showStatPopup = useCallback((text: string, color: string) => {
     const id = crypto.randomUUID()
@@ -160,12 +166,11 @@ export function CoffeemonChat({
       }
     }
 
-    // Show typing indicator
+    // Show typing indicator + status
     setIsTyping(true)
+    showStatus("Procesando...", "info")
 
     try {
-      await new Promise((r) => setTimeout(r, 1000 + Math.random() * 500))
-
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -182,6 +187,10 @@ export function CoffeemonChat({
         }),
       })
 
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status}`)
+      }
+
       const json = await res.json()
       const assistantMessage: ChatMessage = {
         role: "assistant",
@@ -191,6 +200,7 @@ export function CoffeemonChat({
       const finalMessages = [...updatedMessages, assistantMessage]
       setMessages(finalMessages)
       onChatUpdate(finalMessages)
+      showStatus("Listo!", "success")
     } catch {
       const errorMessage: ChatMessage = {
         role: "assistant",
@@ -199,6 +209,7 @@ export function CoffeemonChat({
       const finalMessages = [...updatedMessages, errorMessage]
       setMessages(finalMessages)
       onChatUpdate(finalMessages)
+      showStatus("Error al conectar. Intenta de nuevo.", "error")
     } finally {
       setIsTyping(false)
     }
@@ -254,6 +265,40 @@ export function CoffeemonChat({
           </div>
         ))}
       </div>
+
+      {/* System status messages */}
+      {statusMessage && (
+        <div
+          className="status-toast mb-3 text-center py-2 px-3"
+          style={{
+            fontSize: "0.5rem",
+            border: "3px solid",
+            borderColor:
+              statusMessage.type === "success"
+                ? "#27ae60"
+                : statusMessage.type === "error"
+                  ? "#c0392b"
+                  : "#e67e22",
+            backgroundColor:
+              statusMessage.type === "success"
+                ? "#e8f5e9"
+                : statusMessage.type === "error"
+                  ? "#fdecea"
+                  : "#fff8e1",
+            color:
+              statusMessage.type === "success"
+                ? "#1b5e20"
+                : statusMessage.type === "error"
+                  ? "#b71c1c"
+                  : "#e65100",
+          }}
+        >
+          {statusMessage.type === "success" && "\u2714 "}
+          {statusMessage.type === "error" && "\u2716 "}
+          {statusMessage.type === "info" && "\u231B "}
+          {statusMessage.text}
+        </div>
+      )}
 
       {/* Messages area */}
       <div

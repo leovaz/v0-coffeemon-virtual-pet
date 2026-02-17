@@ -1,6 +1,7 @@
 "use client"
 
 import { usePrivySafe } from "@/lib/use-privy-safe"
+import { useState, useEffect, useRef } from "react"
 
 interface CoffeemonHeaderProps {
   coins: number
@@ -8,6 +9,17 @@ interface CoffeemonHeaderProps {
 
 export function CoffeemonHeader({ coins }: CoffeemonHeaderProps) {
   const { authenticated, user, login, logout, ready } = usePrivySafe()
+  const [coinBump, setCoinBump] = useState(false)
+  const prevCoins = useRef(coins)
+
+  useEffect(() => {
+    if (prevCoins.current !== coins) {
+      setCoinBump(true)
+      const timer = setTimeout(() => setCoinBump(false), 400)
+      prevCoins.current = coins
+      return () => clearTimeout(timer)
+    }
+  }, [coins])
   const userEmail = user?.email?.address ?? null
 
   return (
@@ -36,7 +48,7 @@ export function CoffeemonHeader({ coins }: CoffeemonHeaderProps) {
               {"$BEANS"}
             </span>
             <span
-              className="coins-display"
+              className={`coins-display ${coinBump ? "coins-bump" : ""}`}
               style={{ fontSize: "0.7rem", color: "#ff7a00", fontWeight: "bold" }}
             >
               {coins}

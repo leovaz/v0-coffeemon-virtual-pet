@@ -88,16 +88,19 @@ export function CoffeemonView({
           updated.hydration = clamp(data.hydration + 5)
           updated.energy = clamp(data.energy - 2)
           updated.quality = clamp(data.quality + 1)
+          showPopup("+5 Hidratacion", "#209cee")
           break
         case "sun":
           updated.energy = clamp(data.energy + 5)
           updated.hydration = clamp(data.hydration - 2)
           updated.quality = clamp(data.quality + 1)
+          showPopup("+5 Energia", "#f5c518")
           break
         case "care":
           updated.quality = clamp(data.quality + 5)
           updated.hydration = clamp(data.hydration - 1)
           updated.energy = clamp(data.energy - 1)
+          showPopup("+5 Calidad", "#4caf50")
           break
       }
       onUpdate(updated)
@@ -140,6 +143,11 @@ export function CoffeemonView({
     }
     onUpdate(updated)
     onHistoryAdd("Alimentar Coffeemon", -10)
+
+    // Show stat popups for feed
+    showPopup("+8 Hidratacion", "#209cee")
+    showPopup("+5 Energia", "#f5c518")
+    showPopup("+3 Calidad", "#4caf50")
 
     // Show reaction
     setFeedReaction("Absorbiendo nutrientes!")
