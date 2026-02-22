@@ -6,6 +6,7 @@ import { CoffeemonChat } from "@/components/coffeemon/coffeemon-chat"
 import { CoffeemonHeader } from "@/components/coffeemon/coffeemon-header"
 import { CoffeemonHistory } from "@/components/coffeemon/coffeemon-history"
 import { CoffeemonTraining } from "@/components/coffeemon/coffeemon-training"
+import { SocialHub } from "@/components/coffeemon/social-hub"
 
 const STAGE_EMOJIS = [
   { min: 0, emoji: "\u{1F331}", label: "Semilla" },
@@ -26,7 +27,7 @@ interface StatPopup {
   color: string
 }
 
-type TabId = "main" | "training"
+type TabId = "main" | "training" | "social"
 
 interface CoffeemonViewProps {
   data: CoffeemonData
@@ -222,6 +223,14 @@ export function CoffeemonView({
             >
               {"\u{1F393} Entrenar"}
             </button>
+            <button
+              type="button"
+              className={`nes-btn flex-1 training-tab-btn ${activeTab === "social" ? "is-success" : ""}`}
+              onClick={() => setActiveTab("social")}
+              style={{ fontSize: "0.5rem" }}
+            >
+              {"\u{1F30D} Social"}
+            </button>
           </div>
 
           {/* Stat popups overlay */}
@@ -245,6 +254,20 @@ export function CoffeemonView({
                 training={training}
                 onStatsChange={onUpdate}
                 onTrainingUpdate={onTrainingUpdate}
+                onCoinsChange={onCoinsChange}
+                onHistoryAdd={onHistoryAdd}
+              />
+            </div>
+          )}
+
+          {/* Social tab */}
+          {activeTab === "social" && (
+            <div className="mb-4">
+              <SocialHub
+                data={data}
+                coins={coins}
+                training={training}
+                userEmail={userEmail}
                 onCoinsChange={onCoinsChange}
                 onHistoryAdd={onHistoryAdd}
               />
