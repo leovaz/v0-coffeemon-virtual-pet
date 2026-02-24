@@ -228,6 +228,26 @@ export default function RegenmonProfilePage() {
             </div>
           </div>
 
+          {/* Visit mode indicator */}
+          {!isOwn && (
+            <div className="nes-container is-rounded mb-4 text-center" style={{ backgroundColor: "#e8f4fd", borderColor: "#209cee" }}>
+              <div className="flex items-center justify-center gap-2">
+                <span style={{ fontSize: "1rem" }}>{"\u{1F440}"}</span>
+                <div>
+                  <p style={{ fontSize: "0.55rem", color: "#209cee", fontWeight: "bold" }}>{"MODO VISITA"}</p>
+                  <p style={{ fontSize: "0.4rem", color: "#6b98b8", lineHeight: 2 }}>{"Solo lectura \u2014 no puedes modificar este Coffeemon"}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Own profile indicator */}
+          {isOwn && (
+            <div className="nes-container is-rounded mb-4 text-center" style={{ backgroundColor: "#e8fde8", borderColor: "#27ae60" }}>
+              <p style={{ fontSize: "0.5rem", color: "#27ae60" }}>{"\u2705 Este es tu Coffeemon"}</p>
+            </div>
+          )}
+
           {/* Profile card */}
           <div className="nes-container is-rounded mb-4" style={{ backgroundColor: "#faf3e0" }}>
             <div className="text-center mb-4">

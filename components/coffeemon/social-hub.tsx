@@ -44,12 +44,14 @@ interface StatPopup {
 
 export function SocialHub({ data, coins, training, userEmail, onCoinsChange, onHistoryAdd }: SocialHubProps) {
   const [isRegistered, setIsRegistered] = useState(false)
+  const [isPublic, setIsPublic] = useState(false)
   const [hubId, setHubId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [ownerName, setOwnerName] = useState("")
   const [ownerEmail, setOwnerEmail] = useState(userEmail ?? "")
   const [popups, setPopups] = useState<StatPopup[]>([])
+  const [copied, setCopied] = useState(false)
 
   const { syncToHub } = useHubSync({ data, training, coins, onCoinsChange })
 
@@ -67,6 +69,8 @@ export function SocialHub({ data, coins, training, userEmail, onCoinsChange, onH
       setIsRegistered(true)
       setHubId(storedId)
     }
+    const pub = localStorage.getItem("coffeemonIsPublic")
+    if (pub === "true") setIsPublic(true)
   }, [])
 
   useEffect(() => {
@@ -259,11 +263,91 @@ export function SocialHub({ data, coins, training, userEmail, onCoinsChange, onH
           </a>
         </div>
 
+        {/* Public visibility */}
+        <div className="mt-4">
+          <div className="nes-container is-rounded with-title" style={{ backgroundColor: "#fff8e7" }}>
+            <p className="title" style={{ backgroundColor: "#fff8e7", color: "#2d1b0e", fontSize: "0.5rem" }}>
+              {"\u{1F310} Visibilidad"}
+            </p>
+
+            {isPublic ? (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="nes-badge" style={{ fontSize: "0.4rem" }}>
+                    <span className="is-success" style={{ fontSize: "0.4rem" }}>{"PUBLICO"}</span>
+                  </span>
+                  <span style={{ fontSize: "0.45rem", color: "#27ae60" }}>{"Tu Coffeemon es visible para todos"}</span>
+                </div>
+
+                {/* Public URL */}
+                <div className="mb-3 p-2" style={{ backgroundColor: "#faf3e0", border: "2px dashed #ff7a00", wordBreak: "break-all" }}>
+                  <p style={{ fontSize: "0.4rem", color: "#8a7a6a", marginBottom: "4px" }}>{"URL publica:"}</p>
+                  <p style={{ fontSize: "0.45rem", color: "#2d1b0e" }}>
+                    {typeof window !== "undefined" ? `${window.location.origin}/regenmon/${hubId}` : ""}
+                  </p>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="nes-btn is-primary flex-1"
+                    onClick={() => {
+                      const url = `${window.location.origin}/regenmon/${hubId}`
+                      navigator.clipboard.writeText(url).then(() => {
+                        setCopied(true)
+                        showPopup("URL copiada! \u{1F4CB}", "#27ae60")
+                        setTimeout(() => setCopied(false), 2000)
+                      })
+                    }}
+                    style={{ fontSize: "0.45rem" }}
+                  >
+                    {copied ? "\u2705 Copiado!" : "\u{1F4CB} Copiar URL"}
+                  </button>
+                  <button
+                    type="button"
+                    className="nes-btn is-error flex-1"
+                    onClick={() => {
+                      localStorage.setItem("coffeemonIsPublic", "false")
+                      setIsPublic(false)
+                      showPopup("Perfil ahora es privado \u{1F512}", "#c0392b")
+                    }}
+                    style={{ fontSize: "0.45rem" }}
+                  >
+                    {"\u{1F512} Hacer Privado"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center">
+                <p className="mb-3" style={{ fontSize: "0.45rem", color: "#8a7a6a", lineHeight: 2 }}>
+                  {"Haz publico tu Coffeemon para que otros puedan visitarte, alimentarte y enviarte mensajes."}
+                </p>
+                <button
+                  type="button"
+                  className="nes-btn is-success w-full"
+                  onClick={() => {
+                    localStorage.setItem("coffeemonIsPublic", "true")
+                    setIsPublic(true)
+                    showPopup("Perfil publico activado! \u{1F30D}", "#27ae60")
+                    onHistoryAdd("Perfil hecho publico", 0)
+                    // Sync to hub
+                    setTimeout(() => syncToHub(), 500)
+                  }}
+                  style={{ fontSize: "0.5rem" }}
+                >
+                  {"\u{1F30D} Hacer Publico"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Recent activity */}
         <div className="mt-4">
           <p className="mb-2" style={{ fontSize: "0.5rem", color: "#8a7a6a" }}>{"Actividad reciente"}</p>
           <div style={{ fontSize: "0.45rem", color: "#2d1b0e", lineHeight: 2 }}>
             <p>{"\u2705 Conectado al HUB"}</p>
+            <p>{isPublic ? "\u{1F30D} Perfil publico" : "\u{1F512} Perfil privado"}</p>
             <p>{"\u{1F4CA} Puntos: "}{training.totalPoints}</p>
             <p>{"\u{1F3C5} Etapa: "}{training.stage}</p>
           </div>
